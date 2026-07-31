@@ -11,6 +11,7 @@ import db
 from dateutil_tw import daterange
 from pipeline import process_date
 from dashboard import generate_dashboard
+from publish import publish_dashboard
 
 LOG_PATH = None  # 在 config 內設定實際路徑亦可，這裡先用 stdout，交給工作排程器導向檔案
 
@@ -38,6 +39,8 @@ def main():
 
     generate_dashboard()
     logger.info("儀表板已重新產生")
+
+    publish_dashboard(date.today().strftime("%Y%m%d"))
 
 
 if __name__ == "__main__":

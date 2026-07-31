@@ -5,6 +5,10 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data" / "dashboard.db"
 DASHBOARD_HTML_PATH = BASE_DIR / "data" / "dashboard.html"
 
+# GitHub Pages 發布用（gh-pages 分支的 git worktree）
+PAGES_WORKTREE_DIR = BASE_DIR / ".worktree-gh-pages"
+PAGES_BRANCH = "gh-pages"
+
 TWSE_MARGIN_URL = "https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN"
 TWSE_PRICE_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
 TPEX_MARGIN_URL = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
