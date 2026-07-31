@@ -4,7 +4,8 @@ import requests
 
 from config import (
     TWSE_MARGIN_URL, TWSE_PRICE_URL, TPEX_MARGIN_URL, TPEX_PRICE_URL,
-    TWSE_TAIEX_OHLC_URL, REQUEST_TIMEOUT, REQUEST_HEADERS,
+    TWSE_TAIEX_OHLC_URL, TWSE_PRICE_TYPE, MAX_MISSING_CLOSE_RATIO,
+    REQUEST_TIMEOUT, REQUEST_HEADERS,
 )
 
 
@@ -134,7 +135,7 @@ def fetch_tpex_margin(date_roc: str, date_ad: str) -> dict:
 
 def fetch_twse_price(date_ad: str):
     """回傳 (taiex_close, taiex_change_pct, {stock_id: close_price})"""
-    j = _get_json(TWSE_PRICE_URL, {"date": date_ad, "type": "ALL", "response": "json"})
+    j = _get_json(TWSE_PRICE_URL, {"date": date_ad, "type": TWSE_PRICE_TYPE, "response": "json"})
     _check_stat(j, "TWSE price", date_ad)
     _assert_date(j, date_ad, "TWSE price")
 
@@ -196,10 +197,17 @@ def fetch_all(date_ad: str, date_roc: str, date_slash: str):
 
     # 官方口徑大盤維持率：上市全體融資證券市值(仟元) ÷ 上市融資金額(仟元)
     # 分子必須含 ETF 等所有可融資標的，範圍與官方公布的分母一致，不可套用普通股篩選。
+    with_balance = [s for s, d in twse_margin.items() if d["balance"]]
+    missing = [s for s in with_balance if not twse_close.get(s)]
+    if with_balance and len(missing) / len(with_balance) > MAX_MISSING_CLOSE_RATIO:
+        # 少數標的當日停止買賣屬正常；大量缺漏代表價格回應不完整，不可拿來算市值
+        raise TemporarilyUnavailableError(
+            f"TWSE price {date_ad}: {len(missing)}/{len(with_balance)} 檔有融資餘額卻無收盤價，回應可能不完整"
+        )
     market_value = sum(
-        twse_close[s] * d["balance"]
-        for s, d in twse_margin.items()
-        if d["balance"] and twse_close.get(s)
+        twse_close[s] * twse_margin[s]["balance"]
+        for s in with_balance
+        if twse_close.get(s)
     )
 
     return {

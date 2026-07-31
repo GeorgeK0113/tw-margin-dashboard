@@ -12,6 +12,12 @@ PAGES_BRANCH = "gh-pages"
 TWSE_MARGIN_URL = "https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN"
 TWSE_PRICE_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
 TWSE_TAIEX_OHLC_URL = "https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST"
+
+# 不用 type=ALL：TWSE 在每日 13:30-13:45 尖峰時段會停用「查詢全部資料」。
+# ALLBUT0999 是「全部(不含權證、牛熊證)」，涵蓋所有可融資標的且不受該限制。
+TWSE_PRICE_TYPE = "ALLBUT0999"
+# 有融資餘額卻查不到收盤價的比例上限；超過代表回應不完整，視為暫時性失敗
+MAX_MISSING_CLOSE_RATIO = 0.05
 TPEX_MARGIN_URL = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
 # 注意：舊的 stk_quote_result.php 會忽略日期參數、永遠回傳最新交易日，不可使用。
 TPEX_PRICE_URL = "https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes"

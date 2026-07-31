@@ -62,7 +62,7 @@ def main():
             done += 1
         else:
             skipped += 1
-        time.sleep(0.5)  # 對免費公開端點客氣一點
+        time.sleep(1.0)  # 對免費公開端點客氣一點，也降低被限流的機會
 
     print(f"完成：新增 {done} 個交易日｜已存在 {cached} 日｜非交易日 {skipped} 天")
 
