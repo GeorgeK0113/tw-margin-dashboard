@@ -3,6 +3,8 @@
 參考 mofiinvestment.com 的公開算法重建的本地版本，資料完全來自 TWSE／TPEx 免費公開端點，
 不需要任何帳號或 API Token。
 
+**公開網址（自動每日更新）：https://georgek0113.github.io/tw-margin-dashboard/**
+
 ## 檔案說明
 
 - `fetch.py` — 從 TWSE(上市)/TPEx(上櫃) 抓取每日融資餘額與收盤價
@@ -12,7 +14,8 @@
 - `backfill.py` — 歷史回補：`python backfill.py 2025-08-01 2026-07-29`
 - `daily_update.py` — 每日自動更新進入點（會自動補齊漏掉的天數），供工作排程器呼叫
 - `dashboard.py` — 產生離線可開啟的 `data/dashboard.html`
-- `setup_task_scheduler.ps1` — 註冊 Windows 每日排程（平日 21:45）
+- `publish.py` — 把 `data/dashboard.html` 發布到 GitHub Pages（`gh-pages` 分支，每天覆蓋同一個 commit）
+- `setup_task_scheduler.ps1` — 註冊 Windows 每日排程（平日 21:45，會依序執行抓取／計算／產生頁面／發布）
 
 ## 首次使用
 
