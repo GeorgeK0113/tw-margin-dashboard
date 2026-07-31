@@ -4,5 +4,7 @@ data/dashboard.db
 data/dashboard.db-wal
 data/dashboard.db-shm
 data/daily_update.log
-backfill.log
+backfill*.log
+data/*.db
+data/dashboard.html
 .worktree-gh-pages/

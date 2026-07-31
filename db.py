@@ -41,9 +41,21 @@ def get_conn():
     return conn
 
 
+MIGRATIONS = [
+    "ALTER TABLE daily_metrics ADD COLUMN taiex_open REAL",
+    "ALTER TABLE daily_metrics ADD COLUMN taiex_high REAL",
+    "ALTER TABLE daily_metrics ADD COLUMN taiex_low REAL",
+]
+
+
 def init_db():
     conn = get_conn()
     conn.executescript(SCHEMA)
+    for stmt in MIGRATIONS:
+        try:
+            conn.execute(stmt)
+        except sqlite3.OperationalError:
+            pass  # 欄位已存在
     conn.commit()
     conn.close()
 
