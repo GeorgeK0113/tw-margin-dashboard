@@ -1,4 +1,4 @@
-# 註冊「台股市場廣度儀表板」每日自動更新工作排程
+﻿# 註冊「台股市場廣度儀表板」每日自動更新工作排程
 # 用法：以一般使用者身分在 PowerShell 執行： .\setup_task_scheduler.ps1
 
 $TaskName    = "TW-MarketBreadthDashboard-DailyUpdate"

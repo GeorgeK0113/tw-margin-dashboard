@@ -7,6 +7,15 @@ HTML = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>台股市場廣度儀表板</title>
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("tw-dashboard-theme");
+    if(!t){ t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; }
+    document.documentElement.setAttribute("data-theme", t);
+  }catch(e){}
+})();
+</script>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <style>
 :root{
@@ -21,6 +30,53 @@ HTML = r"""<!doctype html>
   --cyan:#22d3ee;
   --violet:#a78bfa;
   --amber:#fbbf24;
+  --orb1:#101838; --orb2:#2a0c27; --orb3:#042026;
+  --orbA:#3b5bff; --orbB:#ff2e63; --orbC:#00e0b8;
+  --orb-blend:screen; --orb-opacity:.30;
+  --scrim1:rgba(5,7,15,.30); --scrim2:rgba(5,7,15,.66); --scrim3:rgba(5,7,15,.80);
+  --h1a:#fff; --h1b:#8fd3ff; --h1c:#ff9ec4;
+  --hero-shadow:rgba(255,59,92,.35);
+  --herop:#c4cde3;
+  --chartbg:rgba(4,6,14,.62);
+  --panelbg:rgba(255,255,255,.03);
+  --docp:#bcc6dc;
+  --panelp:#a9b4cc;
+  --eqbg:rgba(0,0,0,.32);
+  --eqtext:#cfe4ff;
+  --notetext:#e2d4ae;
+  --mask:rgba(5,7,15,.72);
+  --hoverline:rgba(255,255,255,.3);
+  --hoverline2:rgba(255,255,255,.22);
+}
+html[data-theme="light"]{
+  --bg:#eef1f8;
+  --ink:#161a2c;
+  --muted:#5b6478;
+  --line:rgba(15,23,42,.10);
+  --card:rgba(255,255,255,.70);
+  --up:#c81e3f;
+  --down:#15803d;
+  --danger:#e11d48;
+  --cyan:#0e7490;
+  --violet:#7c3aed;
+  --amber:#b45309;
+  --orb1:#dce4fb; --orb2:#fbdce8; --orb3:#d7f5ef;
+  --orbA:#3b5bff; --orbB:#ff2e63; --orbC:#00b89a;
+  --orb-blend:multiply; --orb-opacity:.14;
+  --scrim1:rgba(255,255,255,.30); --scrim2:rgba(255,255,255,.62); --scrim3:rgba(255,255,255,.80);
+  --h1a:#161a2c; --h1b:#0e7490; --h1c:#be185d;
+  --hero-shadow:rgba(225,29,72,.16);
+  --herop:#374151;
+  --chartbg:rgba(255,255,255,.72);
+  --panelbg:rgba(15,23,42,.035);
+  --docp:#374151;
+  --panelp:#4b5568;
+  --eqbg:rgba(15,23,42,.045);
+  --eqtext:#1e3a5f;
+  --notetext:#78350f;
+  --mask:rgba(255,255,255,.82);
+  --hoverline:rgba(15,23,42,.22);
+  --hoverline2:rgba(15,23,42,.16);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -28,21 +84,22 @@ body{
   background:var(--bg); color:var(--ink); overflow-x:hidden;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   line-height:1.75; -webkit-font-smoothing:antialiased;
+  transition:background .3s ease,color .3s ease;
 }
 /* ---------- 動態背景 ---------- */
 .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
-  radial-gradient(1200px 700px at 12% -10%, #101838 0%, transparent 60%),
-  radial-gradient(1000px 600px at 88% 0%, #2a0c27 0%, transparent 58%),
-  radial-gradient(900px 700px at 50% 110%, #042026 0%, transparent 62%),
-  var(--bg);}
+  radial-gradient(1200px 700px at 12% -10%, var(--orb1) 0%, transparent 60%),
+  radial-gradient(1000px 600px at 88% 0%, var(--orb2) 0%, transparent 58%),
+  radial-gradient(900px 700px at 50% 110%, var(--orb3) 0%, transparent 62%),
+  var(--bg);transition:background .3s ease}
 /* 壓低背景亮度，確保圖表與內文對比 */
 .bg::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(5,7,15,.30) 0%,rgba(5,7,15,.66) 46%,rgba(5,7,15,.80) 100%)}
-.orb{position:absolute;border-radius:50%;filter:blur(96px);opacity:.30;mix-blend-mode:screen;
-  animation:drift 26s ease-in-out infinite alternate}
-.orb.a{width:520px;height:520px;left:-90px;top:-110px;background:#3b5bff;animation-duration:24s}
-.orb.b{width:460px;height:460px;right:-80px;top:60px;background:#ff2e63;animation-duration:31s;animation-delay:-6s}
-.orb.c{width:600px;height:600px;left:34%;bottom:-260px;background:#00e0b8;animation-duration:37s;animation-delay:-12s}
+  background:linear-gradient(180deg,var(--scrim1) 0%,var(--scrim2) 46%,var(--scrim3) 100%)}
+.orb{position:absolute;border-radius:50%;filter:blur(96px);opacity:var(--orb-opacity);mix-blend-mode:var(--orb-blend);
+  animation:drift 26s ease-in-out infinite alternate;transition:opacity .3s ease}
+.orb.a{width:520px;height:520px;left:-90px;top:-110px;background:var(--orbA);animation-duration:24s}
+.orb.b{width:460px;height:460px;right:-80px;top:60px;background:var(--orbB);animation-duration:31s;animation-delay:-6s}
+.orb.c{width:600px;height:600px;left:34%;bottom:-260px;background:var(--orbC);animation-duration:37s;animation-delay:-12s}
 @keyframes drift{
   0%{transform:translate(0,0) scale(1)}
   50%{transform:translate(60px,-40px) scale(1.12)}
@@ -61,7 +118,7 @@ body{
 header{padding:64px 0 26px;text-align:center}
 .kicker{font-size:11px;letter-spacing:.42em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
 h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02em;
-  background:linear-gradient(100deg,#fff 10%,#8fd3ff 45%,#ff9ec4 80%);
+  background:linear-gradient(100deg,var(--h1a) 10%,var(--h1b) 45%,var(--h1c) 80%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
 .badge{display:inline-flex;align-items:center;gap:9px;margin-top:18px;padding:7px 16px;
   border:1px solid var(--line);border-radius:999px;background:var(--card);
@@ -70,24 +127,31 @@ h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02
   animation:pulse 2.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 
+.theme-toggle{position:fixed;top:18px;right:18px;z-index:50;width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);
+  display:grid;place-items:center;cursor:pointer;font-size:18px;line-height:1;
+  transition:transform .2s ease,background .3s ease,border-color .3s ease;color:var(--ink)}
+.theme-toggle:hover{transform:scale(1.1) rotate(-8deg)}
+.theme-toggle:active{transform:scale(.94)}
+
 /* ---------- 主結論 ---------- */
 .hero{margin:42px 0 10px;padding:36px 30px;border:1px solid var(--line);border-radius:22px;
   background:linear-gradient(160deg,rgba(255,77,109,.10),rgba(255,255,255,.03) 55%);
   backdrop-filter:blur(16px);text-align:center;position:relative;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:0;
   background:radial-gradient(560px 200px at 50% 0%,rgba(255,77,109,.20),transparent 70%);pointer-events:none}
-.hero p{margin:0;color:#c4cde3;font-size:clamp(14px,2.1vw,17px);position:relative}
+.hero p{margin:0;color:var(--herop);font-size:clamp(14px,2.1vw,17px);position:relative}
 .hero-num{font-size:clamp(58px,13vw,116px);font-weight:900;line-height:1.02;margin:10px 0 4px;
   font-variant-numeric:tabular-nums;letter-spacing:-.03em;position:relative;
-  background:linear-gradient(180deg,#fff,var(--danger));
+  background:linear-gradient(180deg,var(--ink),var(--danger));
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 0 60px rgba(255,59,92,.35)}
+  text-shadow:0 0 60px var(--hero-shadow)}
 .hero-num .unit{font-size:.3em;font-weight:700;color:var(--muted);
   -webkit-text-fill-color:var(--muted);margin-left:10px;letter-spacing:0}
 .pbar{margin:22px auto 0;max-width:560px;position:relative}
 .pbar-track{height:9px;border-radius:99px;overflow:hidden;
   background:linear-gradient(90deg,#1c7a4e,#c9a227 55%,var(--danger))}
-.pbar-track i{display:block;height:100%;background:rgba(5,7,15,.72);float:right}
+.pbar-track i{display:block;height:100%;background:var(--mask);float:right}
 .pbar-lab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:8px}
 
 /* ---------- 數據卡 ---------- */
@@ -96,7 +160,7 @@ h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02
 .card{padding:20px 20px 18px;border:1px solid var(--line);border-radius:18px;background:var(--card);
   backdrop-filter:blur(14px);position:relative;overflow:hidden;
   transition:transform .25s ease,border-color .25s ease}
-.card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.22)}
+.card:hover{transform:translateY(-4px);border-color:var(--hoverline2)}
 .card::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent,var(--cyan));opacity:.85}
 .card .lab{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:9px}
 .card .val{font-size:clamp(25px,3.6vw,34px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
@@ -111,12 +175,12 @@ h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02
 .grp>span{font-size:12px;color:var(--muted);letter-spacing:.08em;white-space:nowrap}
 .btn{padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:transparent;
   color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;transition:all .18s ease;white-space:nowrap}
-.btn:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
-.btn.on{background:var(--ink);color:#05070f;border-color:var(--ink);font-weight:700}
+.btn:hover{color:var(--ink);border-color:var(--hoverline)}
+.btn.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
 .btn.on.risk{background:var(--danger);border-color:var(--danger);color:#fff}
 
 .chartcard{margin:6px 0 4px;padding:16px 10px 8px;border:1px solid var(--line);border-radius:20px;
-  background:rgba(4,6,14,.62);backdrop-filter:blur(18px)}
+  background:var(--chartbg);backdrop-filter:blur(18px);transition:background .3s ease}
 #chart{height:940px}
 .hint{text-align:center;font-size:12px;color:var(--muted);margin:10px 0 36px}
 
@@ -127,16 +191,16 @@ section.doc h2{margin:0 0 8px;font-size:22px;font-weight:800;display:flex;align-
 section.doc h2 .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:16px;
   background:linear-gradient(140deg,var(--cyan),var(--violet));color:#05070f;font-weight:900}
 section.doc .tag{font-size:11px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;margin-bottom:20px}
-section.doc p{color:#bcc6dc;margin:0 0 15px}
+section.doc p{color:var(--docp);margin:0 0 15px}
 .panelrow{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:20px 0}
-.panel{padding:17px 18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.03)}
+.panel{padding:17px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panelbg)}
 .panel h3{margin:0 0 8px;font-size:14.5px;display:flex;align-items:center;gap:9px}
 .panel h3 b{width:23px;height:23px;border-radius:7px;display:grid;place-items:center;
   font-size:12px;background:var(--pc,var(--cyan));color:#05070f}
-.panel p{font-size:13.5px;margin:0;color:#a9b4cc;line-height:1.7}
+.panel p{font-size:13.5px;margin:0;color:var(--panelp);line-height:1.7}
 .eq{margin:14px 0;padding:15px 17px;border-radius:12px;overflow-x:auto;
-  border:1px solid var(--line);border-left:3px solid var(--violet);background:rgba(0,0,0,.32);
-  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13px;color:#cfe4ff;white-space:nowrap}
+  border:1px solid var(--line);border-left:3px solid var(--violet);background:var(--eqbg);
+  font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13px;color:var(--eqtext);white-space:nowrap}
 .eq em{color:var(--muted);font-style:normal;display:block;font-size:11.5px;margin-bottom:6px;
   font-family:inherit;letter-spacing:.04em}
 table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
@@ -144,7 +208,7 @@ th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
 th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.05em}
 td{font-variant-numeric:tabular-nums}
 .note{padding:15px 17px;border-radius:12px;border:1px solid rgba(251,191,36,.28);
-  background:rgba(251,191,36,.07);font-size:13.5px;color:#e2d4ae}
+  background:rgba(251,191,36,.07);font-size:13.5px;color:var(--notetext)}
 .note b{color:var(--amber)}
 footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);margin-top:42px}
 @media(max-width:640px){
@@ -159,6 +223,7 @@ footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px
 <body>
 <div class="bg"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
 <div class="grid"></div>
+<button id="themeToggle" class="theme-toggle" type="button" title="切換深色／淺色" aria-label="切換深色／淺色"></button>
 
 <div class="wrap">
   <header>
@@ -248,6 +313,42 @@ const META = __META__;
 const PERIODS = [["3個月",3],["半年",6],["1年",12],["2年",24],["5年",60]];
 const THS = [130,140,150,160];
 let state = { months: 12, th: 130 };
+
+const THEME_KEY = "tw-dashboard-theme";
+const CHART_THEMES = {
+  dark: {
+    plotBg:"rgba(255,255,255,.015)", grid:"rgba(255,255,255,.06)", tick:"#8b96b0",
+    axisLine:"rgba(255,255,255,.12)", font:"#e8ecf6",
+    hoverBg:"rgba(8,12,24,.94)", hoverBorder:"rgba(255,255,255,.2)",
+    legend:"#8b96b0", spike:"rgba(255,255,255,.28)",
+    titleColors:["#ff8fa3","#ff6b85","#67e8f9","#5eead4"],
+  },
+  light: {
+    plotBg:"rgba(15,23,42,.025)", grid:"rgba(15,23,42,.08)", tick:"#5b6478",
+    axisLine:"rgba(15,23,42,.16)", font:"#161a2c",
+    hoverBg:"rgba(255,255,255,.97)", hoverBorder:"rgba(15,23,42,.15)",
+    legend:"#5b6478", spike:"rgba(15,23,42,.25)",
+    titleColors:["#c81e3f","#c81e3f","#0e7490","#0f766e"],
+  },
+};
+
+function currentTheme(){
+  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+}
+function updateToggleIcon(){
+  const btn = document.getElementById("themeToggle");
+  btn.textContent = currentTheme()==="dark" ? "🌙" : "☀️";
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  try{ localStorage.setItem(THEME_KEY, t); }catch(e){}
+  updateToggleIcon();
+  renderChart();
+}
+document.getElementById("themeToggle").addEventListener("click", ()=>{
+  setTheme(currentTheme()==="dark" ? "light" : "dark");
+});
+updateToggleIcon();
 
 const fmt = (n,d=0)=> n==null||isNaN(n) ? "—"
   : Number(n).toLocaleString("zh-TW",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -348,8 +449,9 @@ function renderChart(){
      xaxis:"x",yaxis:"y4"},
   ];
 
-  const ax = {gridcolor:"rgba(255,255,255,.06)",zeroline:false,
-              tickfont:{color:"#8b96b0",size:11},linecolor:"rgba(255,255,255,.12)"};
+  const ct = CHART_THEMES[currentTheme()];
+  const ax = {gridcolor:ct.grid,zeroline:false,
+              tickfont:{color:ct.tick,size:11},linecolor:ct.axisLine};
   const title = (t,y,c)=>({text:t,x:0,xref:"paper",y,yref:"paper",xanchor:"left",yanchor:"bottom",
                            showarrow:false,font:{size:13,color:c,family:"inherit"}});
 
@@ -357,24 +459,24 @@ function renderChart(){
   const lo = rr.length ? Math.min(...rr,128) : 120, hi = rr.length ? Math.max(...rr,152) : 200;
 
   Plotly.react("chart", traces, {
-    paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(255,255,255,.015)",
-    font:{family:'"Noto Sans TC",sans-serif',color:"#e8ecf6"},
+    paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:ct.plotBg,
+    font:{family:'"Noto Sans TC",sans-serif',color:ct.font},
     margin:{l:60,r:26,t:26,b:44},
     hovermode:"x unified",
-    hoverlabel:{bgcolor:"rgba(8,12,24,.94)",bordercolor:"rgba(255,255,255,.2)",
-                font:{color:"#e8ecf6",size:12}},
+    hoverlabel:{bgcolor:ct.hoverBg,bordercolor:ct.hoverBorder,
+                font:{color:ct.font,size:12}},
     dragmode:"pan",
     showlegend:true,
-    legend:{orientation:"h",y:1.055,x:0,font:{size:11,color:"#8b96b0"},bgcolor:"rgba(0,0,0,0)"},
+    legend:{orientation:"h",y:1.055,x:0,font:{size:11,color:ct.legend},bgcolor:"rgba(0,0,0,0)"},
     xaxis:Object.assign({},ax,{domain:[0,1],anchor:"y4",rangeslider:{visible:false},
-      type:"date",showspikes:true,spikecolor:"rgba(255,255,255,.28)",spikethickness:1,
+      type:"date",showspikes:true,spikecolor:ct.spike,spikethickness:1,
       spikemode:"across",spikedash:"dot"}),
-    yaxis:Object.assign({},ax,{domain:[.77,1],anchor:"x",title:{text:"指數",font:{size:11,color:"#8b96b0"}}}),
-    yaxis2:Object.assign({},ax,{domain:[.525,.735],anchor:"x",title:{text:"家數",font:{size:11,color:"#8b96b0"}}}),
+    yaxis:Object.assign({},ax,{domain:[.77,1],anchor:"x",title:{text:"指數",font:{size:11,color:ct.tick}}}),
+    yaxis2:Object.assign({},ax,{domain:[.525,.735],anchor:"x",title:{text:"家數",font:{size:11,color:ct.tick}}}),
     yaxis3:Object.assign({},ax,{domain:[.28,.49],anchor:"x",range:[0,100],
-      title:{text:"% 站上均線",font:{size:11,color:"#8b96b0"}}}),
+      title:{text:"% 站上均線",font:{size:11,color:ct.tick}}}),
     yaxis4:Object.assign({},ax,{domain:[0,.245],anchor:"x",range:[lo-4,hi+4],
-      title:{text:"維持率 %",font:{size:11,color:"#8b96b0"}}}),
+      title:{text:"維持率 %",font:{size:11,color:ct.tick}}}),
     shapes:[
       {type:"line",xref:"paper",x0:0,x1:1,yref:"y4",y0:130,y1:130,
        line:{color:"#ff3b5c",width:1.2,dash:"dash"}},
@@ -382,10 +484,10 @@ function renderChart(){
        line:{color:"#fbbf24",width:1,dash:"dot"}},
     ],
     annotations:[
-      title("加權指數 TAIEX（紅漲綠跌）",1.005,"#ff8fa3"),
-      title(`融資維持率 < ${state.th}% 個股家數　← 融資戶被迫賣壓`,.742,"#ff6b85"),
-      title("市場廣度：站上 20 / 60 日均線比例",.497,"#67e8f9"),
-      title("大盤整體維持率（證交所口徑）　紅線 130% 追繳・黃線 150% 警戒",.252,"#5eead4"),
+      title("加權指數 TAIEX（紅漲綠跌）",1.005,ct.titleColors[0]),
+      title(`融資維持率 < ${state.th}% 個股家數　← 融資戶被迫賣壓`,.742,ct.titleColors[1]),
+      title("市場廣度：站上 20 / 60 日均線比例",.497,ct.titleColors[2]),
+      title("大盤整體維持率（證交所口徑）　紅線 130% 追繳・黃線 150% 警戒",.252,ct.titleColors[3]),
     ],
   }, {responsive:true, scrollZoom:true, displayModeBar:false});
 }
