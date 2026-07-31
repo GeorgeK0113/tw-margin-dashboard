@@ -31,11 +31,14 @@ body{
 }
 /* ---------- 動態背景 ---------- */
 .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
-  radial-gradient(1200px 700px at 12% -10%, #16204a 0%, transparent 60%),
-  radial-gradient(1000px 600px at 88% 0%, #3a1136 0%, transparent 58%),
-  radial-gradient(900px 700px at 50% 110%, #052b33 0%, transparent 62%),
+  radial-gradient(1200px 700px at 12% -10%, #101838 0%, transparent 60%),
+  radial-gradient(1000px 600px at 88% 0%, #2a0c27 0%, transparent 58%),
+  radial-gradient(900px 700px at 50% 110%, #042026 0%, transparent 62%),
   var(--bg);}
-.orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;mix-blend-mode:screen;
+/* 壓低背景亮度，確保圖表與內文對比 */
+.bg::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(5,7,15,.30) 0%,rgba(5,7,15,.66) 46%,rgba(5,7,15,.80) 100%)}
+.orb{position:absolute;border-radius:50%;filter:blur(96px);opacity:.30;mix-blend-mode:screen;
   animation:drift 26s ease-in-out infinite alternate}
 .orb.a{width:520px;height:520px;left:-90px;top:-110px;background:#3b5bff;animation-duration:24s}
 .orb.b{width:460px;height:460px;right:-80px;top:60px;background:#ff2e63;animation-duration:31s;animation-delay:-6s}
@@ -112,8 +115,10 @@ h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02
 .btn.on{background:var(--ink);color:#05070f;border-color:var(--ink);font-weight:700}
 .btn.on.risk{background:var(--danger);border-color:var(--danger);color:#fff}
 
-#chart{height:940px;margin:6px 0 4px}
-.hint{text-align:center;font-size:12px;color:var(--muted);margin-bottom:36px}
+.chartcard{margin:6px 0 4px;padding:16px 10px 8px;border:1px solid var(--line);border-radius:20px;
+  background:rgba(4,6,14,.62);backdrop-filter:blur(18px)}
+#chart{height:940px}
+.hint{text-align:center;font-size:12px;color:var(--muted);margin:10px 0 36px}
 
 /* ---------- 說明區 ---------- */
 section.doc{margin:34px 0;padding:32px 30px;border:1px solid var(--line);border-radius:20px;
@@ -144,6 +149,7 @@ td{font-variant-numeric:tabular-nums}
 footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);margin-top:42px}
 @media(max-width:640px){
   #chart{height:780px}
+  .chartcard{padding:12px 2px 4px}
   .controls{position:static}
   .hero{padding:28px 18px}
   section.doc{padding:24px 19px}
@@ -178,7 +184,7 @@ footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px
     <div class="grp"><span>維持率門檻</span><div id="thBtns"></div></div>
   </div>
 
-  <div id="chart"></div>
+  <div class="chartcard"><div id="chart"></div></div>
   <div class="hint">滑鼠移到圖上顯示當日完整數字｜滾輪縮放、按住拖曳平移｜手機雙指縮放</div>
 
   <section class="doc">
