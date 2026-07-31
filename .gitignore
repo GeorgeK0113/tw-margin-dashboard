@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/dashboard.db
+data/dashboard.db-wal
+data/dashboard.db-shm
+data/daily_update.log
+backfill.log
