@@ -5,7 +5,7 @@ from datetime import date
 import db
 from compute import compute_stock_rows, compute_breadth, compute_day_metrics
 from dateutil_tw import ad_to_compact, ad_to_roc, ad_to_slash
-from fetch import fetch_all, NoTradingDataError
+from fetch import fetch_all, NoTradingDataError, TemporarilyUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,8 @@ def process_date(d: date) -> bool:
     except NoTradingDataError as e:
         logger.info("skip %s: %s", date_str, e)
         return False
-    except Exception as e:  # noqa: BLE001
-        logger.warning("skip %s: fetch error %s", date_str, e)
-        return False
+    # TemporarilyUnavailableError 不在這裡吞掉，交給呼叫端決定重試，
+    # 否則暫時性失敗會被誤當成「這天沒有資料」而永久缺漏。
 
     conn = db.get_conn()
     try:

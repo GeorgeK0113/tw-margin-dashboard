@@ -9,10 +9,31 @@ from config import (
 
 
 class NoTradingDataError(Exception):
-    """指定日期非交易日或資料尚未產生。"""
+    """指定日期確實沒有資料（非交易日）——可以安全略過。"""
 
 
-def _get_json(url: str, params: dict, retries: int = 3):
+class TemporarilyUnavailableError(Exception):
+    """端點暫時不可用（維護時段、流量限制、非 JSON 回應）——必須重試，不可當成沒資料。
+
+    TWSE 每日 13:30-13:45 為報表產製時間會拒絕查詢，回應仍是合法 JSON，
+    只是 stat 帶著說明文字。若把它當成「非交易日」略過，會靜默地掉資料。
+    """
+
+
+# 只有這些字樣代表「真的沒有這天的資料」，其餘一律視為暫時性失敗
+NO_DATA_HINTS = ("沒有符合條件", "無符合條件", "沒有資料")
+
+
+def _check_stat(payload: dict, source: str, date_ad: str):
+    stat = str(payload.get("stat", "")).strip()
+    if stat == "OK":
+        return
+    if any(h in stat for h in NO_DATA_HINTS):
+        raise NoTradingDataError(f"{source} {date_ad}: {stat}")
+    raise TemporarilyUnavailableError(f"{source} {date_ad}: {stat}")
+
+
+def _get_json(url: str, params: dict, retries: int = 4):
     last_err = None
     for i in range(retries):
         try:
@@ -21,8 +42,9 @@ def _get_json(url: str, params: dict, retries: int = 3):
             return r.json()
         except Exception as e:  # noqa: BLE001
             last_err = e
-            time.sleep(1.5 * (i + 1))
-    raise last_err
+            time.sleep(2.0 * (i + 1))
+    # 連線失敗或回應不是 JSON（多半是流量限制或錯誤頁），屬暫時性問題
+    raise TemporarilyUnavailableError(f"{url}: {last_err}")
 
 
 def _assert_date(payload: dict, expected_ad: str, source: str):
@@ -68,8 +90,7 @@ def fetch_twse_margin(date_ad: str):
       margin_money — 上市融資金額今日餘額（仟元），計算官方口徑大盤維持率的分母
     """
     j = _get_json(TWSE_MARGIN_URL, {"date": date_ad, "selectType": "ALL", "response": "json"})
-    if j.get("stat") != "OK":
-        raise NoTradingDataError(f"TWSE margin {date_ad}: {j.get('stat')}")
+    _check_stat(j, "TWSE margin", date_ad)
     _assert_date(j, date_ad, "TWSE margin")
     table = next(t for t in j["tables"] if "融資融券彙總" in t.get("title", ""))
     idx = _first_index(table["fields"])
@@ -114,8 +135,7 @@ def fetch_tpex_margin(date_roc: str, date_ad: str) -> dict:
 def fetch_twse_price(date_ad: str):
     """回傳 (taiex_close, taiex_change_pct, {stock_id: close_price})"""
     j = _get_json(TWSE_PRICE_URL, {"date": date_ad, "type": "ALL", "response": "json"})
-    if j.get("stat") != "OK":
-        raise NoTradingDataError(f"TWSE price {date_ad}: {j.get('stat')}")
+    _check_stat(j, "TWSE price", date_ad)
     _assert_date(j, date_ad, "TWSE price")
 
     idx_table = next(t for t in j["tables"] if t.get("title", "").endswith("價格指數(臺灣證券交易所)"))
@@ -155,8 +175,7 @@ def fetch_taiex_ohlc_month(date_ad: str) -> dict:
     """抓取某個月份的加權指數開高低收。date_ad 給該月任一天(YYYYMMDD)。
     回傳 {YYYYMMDD: (open, high, low, close)}"""
     j = _get_json(TWSE_TAIEX_OHLC_URL, {"date": date_ad, "response": "json"})
-    if j.get("stat") != "OK":
-        raise NoTradingDataError(f"TAIEX OHLC {date_ad}: {j.get('stat')}")
+    _check_stat(j, "TAIEX OHLC", date_ad)
     out = {}
     for row in j["data"]:
         roc_date = row[0]  # 例如 115/07/01
