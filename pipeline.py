@@ -4,7 +4,7 @@ from datetime import date
 
 import db
 from compute import compute_stock_rows, compute_breadth, compute_day_metrics
-from dateutil_tw import ad_to_compact, ad_to_roc
+from dateutil_tw import ad_to_compact, ad_to_roc, ad_to_slash
 from fetch import fetch_all, NoTradingDataError
 
 logger = logging.getLogger(__name__)
@@ -14,9 +14,10 @@ def process_date(d: date) -> bool:
     date_str = ad_to_compact(d)
     date_ad = ad_to_compact(d)
     date_roc = ad_to_roc(d)
+    date_slash = ad_to_slash(d)
 
     try:
-        raw = fetch_all(date_ad, date_roc)
+        raw = fetch_all(date_ad, date_roc, date_slash)
     except NoTradingDataError as e:
         logger.info("skip %s: %s", date_str, e)
         return False

@@ -10,6 +10,10 @@ def ad_to_compact(d: date) -> str:
     return d.strftime("%Y%m%d")
 
 
+def ad_to_slash(d: date) -> str:
+    return d.strftime("%Y/%m/%d")
+
+
 def daterange(start: date, end: date):
     """含頭尾，只吐出週一到週五（假日仍可能無資料，由呼叫端捕捉例外略過）。"""
     d = start
