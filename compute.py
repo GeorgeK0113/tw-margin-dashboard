@@ -52,20 +52,27 @@ def compute_breadth(conn, date_str: str, stock_ids: list[str]) -> dict:
         return {"up_count": None, "down_count": None, "pct_above_ma20": None, "pct_above_ma60": None}
 
     max_window = max(MA_WINDOWS)
-    placeholders = ",".join(["?"] * len(stock_ids))
+    # 只撈計算均線需要的最近 N 個交易日，避免歷史表越長越慢
+    recent = conn.execute(
+        "SELECT DISTINCT date FROM stock_daily WHERE date <= ? ORDER BY date DESC LIMIT ?",
+        (date_str, max_window + 1),
+    ).fetchall()
+    if not recent:
+        return {"up_count": None, "down_count": None, "pct_above_ma20": None, "pct_above_ma60": None}
+    since = recent[-1][0]
+
     df = pd.read_sql_query(
-        f"""SELECT date, stock_id, close FROM stock_daily
-            WHERE stock_id IN ({placeholders}) AND date <= ?
-            ORDER BY date""",
+        """SELECT date, stock_id, close FROM stock_daily
+           WHERE date >= ? AND date <= ?""",
         conn,
-        params=[*stock_ids, date_str],
+        params=[since, date_str],
     )
     if df.empty:
         return {"up_count": None, "down_count": None, "pct_above_ma20": None, "pct_above_ma60": None}
 
+    wanted = set(stock_ids)
+    df = df[df["stock_id"].isin(wanted)]
     pivot = df.pivot(index="date", columns="stock_id", values="close").sort_index()
-    # 只保留最近 max_window+1 天，加速計算
-    pivot = pivot.tail(max_window + 1)
     if date_str not in pivot.index:
         return {"up_count": None, "down_count": None, "pct_above_ma20": None, "pct_above_ma60": None}
 
