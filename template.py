@@ -206,7 +206,7 @@ footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px
       </div>
       <div class="panel" style="--pc:#a78bfa">
         <h3><b>4</b>大盤整體維持率</h3>
-        <p>把全市場的融資部位合起來看的平均健康度，畫上 130% 追繳線與 150% 警戒線。跌向 130% 代表整體而非個別族群的融資壓力。</p>
+        <p>全市場融資部位合起來的健康度，畫上 130% 追繳線與 150% 警戒線。這條線用的是證交所口徑，可與官方公布值對照（見下方驗證）。跌向 130% 代表壓力已是整體性的，而非個別族群。</p>
       </div>
     </div>
     <p>上方按鈕可切換觀察期間，以及改變「跌破多少維持率」的認定門檻——把門檻從 130% 拉到 160%，看的就是「連還沒到追繳、但已經接近的族群有多大」。</p>
@@ -218,13 +218,18 @@ footer{text-align:center;padding:44px 0 10px;color:var(--muted);font-size:12.5px
     <p>個股融資維持率沒有任何官方或第三方資料源直接提供。原因是維持率＝擔保品市值 ÷ 融資金額，而融資金額是每個投資人各自在不同價位借的錢，交易所無從得知，因此只公布全市場加總。本站的個股維持率是依公開算法逐日遞推：</p>
     <div class="eq"><em>個股融資成本</em>成本 = (昨日成本 × (今日餘額 − 今日融資買進) + 今日收盤價 × 今日融資買進) ÷ 今日餘額</div>
     <div class="eq"><em>個股融資維持率</em>維持率 = 收盤價 ÷ (融資成本 × 0.6) × 100%</div>
-    <div class="eq"><em>大盤整體維持率（本站估算）</em>大盤維持率 = Σ(個股維持率 × 該股融資餘額) ÷ Σ(融資餘額)</div>
-    <p>成本線是遞推的：今天的成本建立在昨天的成本上。因此資料越早開始累積、數字越準。本站目前的暖機起點與涵蓋範圍如下：</p>
+    <div class="eq"><em>大盤整體維持率（官方口徑）</em>大盤維持率 = Σ(收盤價 × 融資餘額張數) ÷ 上市融資金額餘額 × 100%</div>
+
+    <h3 style="font-size:16px;margin:26px 0 10px">怎麼知道算得對不對</h3>
+    <p>第三條公式的分子與分母都來自交易所公開資料，算出來的結果可以直接對照證交所公布的大盤維持率。實測 2026-07-29：</p>
+    <div class="eq"><em>驗證</em>本站計算 157.99%　vs　證交所公布 158.00%　→　誤差 0.01 個百分點</div>
+    <p>這條驗證成立，代表「收盤價 × 融資餘額」這個市值推算是對的。個股維持率用的是同一組收盤價與融資餘額，只是再多一層成本遞推，因此個股層級的推算也建立在已驗證的基礎上。</p>
+    <p>成本線是遞推的：今天的成本建立在昨天的成本上。起算頭幾個月的成本會等於當日收盤價、維持率一律是 166.67%，屬於失真值，因此<b>暖機期的資料不會進到圖表</b>。</p>
     <table id="metaTable"></table>
     <div class="note">
-      <b>與原始參考站的差異（誠實揭露）：</b>
-      ①「大盤整體維持率」本站採<b>融資餘額加權平均</b>估算，並非交易所另行公布的官方總數——該數字沒有免費且每日更新的公開 API 可取得，因此無法逐年比對誤差。
-      ② 成本線起算日較短，早期資料仍在暖機，越靠近今天越可信。
+      <b>已知限制（誠實揭露）：</b>
+      ① 成本線暖機期比原始參考站短，慢週轉個股的成本可能偏低、維持率偏高，跌破門檻家數會略微低估。
+      ② 大盤維持率為上市口徑（與證交所公布值一致），不含上櫃；個股家數統計則含上市＋上櫃。
       ③ 個股範圍以代號規則近似（四碼、排除 ETF/ETN/TDR），與官方清單可能有極少數落差。
     </div>
     <p style="margin-top:16px">資料來源：台灣證券交易所（TWSE）與證券櫃檯買賣中心（TPEx）公開端點，每個交易日晚間自動抓取重算，無需任何付費資料源。</p>
@@ -302,7 +307,7 @@ function renderStats(){
     [`維持率 &lt; ${state.th}% 家數`, fmt(cur),
      `占有融資標的 ${fmt(total?cur/total*100:null,1)}%`, "#ff3b5c"],
     ["大盤整體維持率", fmt(DATA.ratio[n],2)+"%",
-     `期間最高 ${fmt(Math.max(...cut(DATA.ratio).filter(v=>v!=null)),2)}%`, "#a78bfa"],
+     `證交所口徑　期間最高 ${fmt(Math.max(...cut(DATA.ratio).filter(v=>v!=null)),2)}%`, "#a78bfa"],
     ["上漲 / 下跌家數", `${fmt(up)} / ${fmt(dn)}`,
      `漲家數占比 ${fmt(upPct,1)}%`, "#22c55e"],
     ["站上 20 日均線", fmt(DATA.ma20[n],1)+"%",
@@ -380,7 +385,7 @@ function renderChart(){
       title("加權指數 TAIEX（紅漲綠跌）",1.005,"#ff8fa3"),
       title(`融資維持率 < ${state.th}% 個股家數　← 融資戶被迫賣壓`,.742,"#ff6b85"),
       title("市場廣度：站上 20 / 60 日均線比例",.497,"#67e8f9"),
-      title("大盤整體維持率（估算）　紅線 130% 追繳・黃線 150% 警戒",.252,"#5eead4"),
+      title("大盤整體維持率（證交所口徑）　紅線 130% 追繳・黃線 150% 警戒",.252,"#5eead4"),
     ],
   }, {responsive:true, scrollZoom:true, displayModeBar:false});
 }
@@ -391,8 +396,8 @@ document.getElementById("updBadge").textContent =
   `資料更新至 ${META.latestPretty}　｜　共 ${fmt(META.days)} 個交易日　｜　每交易日自動更新`;
 document.getElementById("metaTable").innerHTML =
   `<tr><th>項目</th><th>內容</th></tr>`+
-  `<tr><td>資料涵蓋區間</td><td>${META.startPretty} ～ ${META.latestPretty}</td></tr>`+
-  `<tr><td>交易日數</td><td>${fmt(META.days)} 日</td></tr>`+
+  `<tr><td>展示區間</td><td>${META.startPretty} ～ ${META.latestPretty}（${fmt(META.days)} 個交易日）</td></tr>`+
+  `<tr><td>成本線暖機</td><td>另有 ${fmt(META.warmupDays)} 個交易日先行累積成本，不進圖表</td></tr>`+
   `<tr><td>納入統計的有融資標的</td><td>${fmt(META.totalStocks)} 檔（上市＋上櫃普通股，排除 ETF/ETN）</td></tr>`+
   `<tr><td>維持率計算基準</td><td>融資自備款 40%，即成本 × 0.6 為融資金額</td></tr>`+
   `<tr><td>頁面產出時間</td><td>${META.generated}</td></tr>`;

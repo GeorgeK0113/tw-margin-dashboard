@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 
 import db
-from config import DASHBOARD_HTML_PATH, MAINTENANCE_THRESHOLDS
+from config import DASHBOARD_HTML_PATH, MAINTENANCE_THRESHOLDS, DISPLAY_START
 from template import HTML
 
 
@@ -28,7 +28,13 @@ def _pretty(date_str: str) -> str:
 
 def generate_dashboard():
     conn = db.get_conn()
-    df = pd.read_sql_query("SELECT * FROM daily_metrics ORDER BY date", conn)
+    # 只展示暖機期之後的資料，初始化偏差不進圖表
+    df = pd.read_sql_query(
+        "SELECT * FROM daily_metrics WHERE date >= ? ORDER BY date", conn, params=[DISPLAY_START]
+    )
+    warmup_days = conn.execute(
+        "SELECT COUNT(*) FROM daily_metrics WHERE date < ?", (DISPLAY_START,)
+    ).fetchone()[0]
     conn.close()
 
     DASHBOARD_HTML_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -64,6 +70,7 @@ def generate_dashboard():
         "startPretty": _pretty(str(df.iloc[0]["date"])),
         "days": int(len(df)),
         "totalStocks": int(latest["total_margin_stocks"]),
+        "warmupDays": int(warmup_days),
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 

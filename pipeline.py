@@ -50,7 +50,10 @@ def process_date(d: date) -> bool:
         breadth = compute_breadth(conn, date_str, stock_ids)
     finally:
         conn.close()
-    metrics = compute_day_metrics(stock_rows, breadth, raw["taiex_close"], raw["taiex_change_pct"])
+    metrics = compute_day_metrics(
+        stock_rows, breadth, raw["taiex_close"], raw["taiex_change_pct"],
+        raw.get("market_value"), raw.get("margin_money"),
+    )
     db.save_metrics(date_str, metrics)
     logger.info("saved %s: %s檔<130%%, TAIEX=%s", date_str, metrics["count_below_130"], metrics["taiex_close"])
     return True

@@ -60,8 +60,13 @@ def _to_float(s):
         return None
 
 
-def fetch_twse_margin(date_ad: str) -> dict:
-    """date_ad: YYYYMMDD。回傳 {stock_id: {"name":.., "buy":.., "balance":..}}"""
+def fetch_twse_margin(date_ad: str):
+    """date_ad: YYYYMMDD。
+
+    回傳 (stocks, margin_money)：
+      stocks       — {stock_id: {"name":.., "buy":.., "balance":..}}，餘額單位為張
+      margin_money — 上市融資金額今日餘額（仟元），計算官方口徑大盤維持率的分母
+    """
     j = _get_json(TWSE_MARGIN_URL, {"date": date_ad, "selectType": "ALL", "response": "json"})
     if j.get("stat") != "OK":
         raise NoTradingDataError(f"TWSE margin {date_ad}: {j.get('stat')}")
@@ -76,7 +81,12 @@ def fetch_twse_margin(date_ad: str) -> dict:
             "buy": _to_float(row[idx["買進"]]),
             "balance": _to_float(row[idx["今日餘額"]]),
         }
-    return out
+
+    stat = next(t for t in j["tables"] if "信用交易統計" in t.get("title", ""))
+    si = _first_index(stat["fields"])
+    money_row = next(r for r in stat["data"] if "融資金額" in r[si["項目"]])
+    margin_money = _to_float(money_row[si["今日餘額"]])
+    return out, margin_money
 
 
 def fetch_tpex_margin(date_roc: str, date_ad: str) -> dict:
@@ -160,13 +170,24 @@ def fetch_taiex_ohlc_month(date_ad: str) -> dict:
 
 def fetch_all(date_ad: str, date_roc: str, date_slash: str):
     """整合單一交易日所需的全部原始資料。任何一段抓不到就整體視為非交易日。"""
-    twse_margin = fetch_twse_margin(date_ad)
+    twse_margin, twse_margin_money = fetch_twse_margin(date_ad)
     tpex_margin = fetch_tpex_margin(date_roc, date_ad)
     taiex_close, taiex_change_pct, twse_close = fetch_twse_price(date_ad)
     tpex_close = fetch_tpex_price(date_slash, date_ad)
+
+    # 官方口徑大盤維持率：上市全體融資證券市值(仟元) ÷ 上市融資金額(仟元)
+    # 分子必須含 ETF 等所有可融資標的，範圍與官方公布的分母一致，不可套用普通股篩選。
+    market_value = sum(
+        twse_close[s] * d["balance"]
+        for s, d in twse_margin.items()
+        if d["balance"] and twse_close.get(s)
+    )
+
     return {
         "taiex_close": taiex_close,
         "taiex_change_pct": taiex_change_pct,
         "margin": {**twse_margin, **tpex_margin},
         "close": {**twse_close, **tpex_close},
+        "market_value": market_value,
+        "margin_money": twse_margin_money,
     }

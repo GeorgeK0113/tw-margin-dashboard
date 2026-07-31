@@ -27,6 +27,11 @@ MAINTENANCE_THRESHOLDS = [130, 140, 150, 160]
 
 MA_WINDOWS = [20, 60]
 
+# 成本線是遞推的，起算初期的成本＝當日收盤價，維持率會失真。
+# 因此資料從 WARMUP_START 開始累積，但只展示 DISPLAY_START 之後的部分。
+WARMUP_START = "20220801"
+DISPLAY_START = "20230801"
+
 # 個股代號篩選：上市/上櫃普通股，排除 ETF(00開頭)/ETN/TDR(91開頭)等
 def is_ordinary_share(stock_id: str) -> bool:
     if not stock_id or len(stock_id) != 4 or not stock_id.isdigit():

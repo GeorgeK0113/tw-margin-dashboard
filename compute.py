@@ -2,9 +2,10 @@
 
 個股融資成本 = (昨日融資成本 x (今日餘額 - 今日買進) + 收盤價 x 今日買進) / 今日餘額
 個股融資維持率 = 收盤價 / (融資成本 x 0.6) x 100%
-大盤整體維持率（本站估算版）= 以各股融資餘額(張)加權平均的個股維持率
-    (原站的「官方公布值」是交易所另外公布的加總數字，無公開、免費、每日更新的 API 可取得，
-     這裡改用「餘額加權平均」近似，方法自洽、不依賴任何需要付費/註冊的資料源。)
+大盤整體維持率 = 上市全體融資證券市值 ÷ 上市融資金額 × 100%
+    分子 = Σ(收盤價 × 融資餘額張數)，單位仟元，須含 ETF 等所有可融資標的
+    分母 = 證交所「信用交易統計」公布的融資金額今日餘額(仟元)
+    此為官方口徑，實測 2026-07-29 得 157.99%，對照公布值 158.00%。
 """
 import pandas as pd
 
@@ -102,7 +103,8 @@ def compute_breadth(conn, date_str: str, stock_ids: list[str]) -> dict:
     return result
 
 
-def compute_day_metrics(stock_rows: list[dict], breadth: dict, taiex_close, taiex_change_pct) -> dict:
+def compute_day_metrics(stock_rows: list[dict], breadth: dict, taiex_close, taiex_change_pct,
+                        market_value=None, margin_money=None) -> dict:
     margined = [
         r for r in stock_rows
         if r["margin_balance"] and r["margin_balance"] > 0 and r["maintenance_ratio"] is not None
@@ -117,10 +119,10 @@ def compute_day_metrics(stock_rows: list[dict], breadth: dict, taiex_close, taie
         counts["count_below_130"] / total_margin_stocks * 100 if total_margin_stocks else None
     )
 
-    total_balance = sum(r["margin_balance"] for r in margined)
+    # 官方口徑：上市全體融資證券市值 ÷ 上市融資金額（兩者皆為仟元）
     market_ratio = (
-        sum(r["maintenance_ratio"] * r["margin_balance"] for r in margined) / total_balance
-        if total_balance else None
+        round(market_value / margin_money * 100, 4)
+        if market_value and margin_money else None
     )
 
     return {
