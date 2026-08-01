@@ -17,7 +17,11 @@ $CmdLine = "/c `"`"$PythonExe`" `"$ScriptPath`" >> `"$LogPath`" 2>&1`""
 
 $Action  = New-ScheduledTaskAction -Execute "cmd.exe" -Argument $CmdLine -WorkingDirectory $ProjectDir
 $Trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 21:45
-$Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
+# 筆電常見用電池：預設值會在補跑時「未插電就不啟動」或「執行中切電池就強制中止」，
+# 導致補跑靜默失敗且不會再重試，必須明確關閉。
+$Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd `
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
+    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
 Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
 

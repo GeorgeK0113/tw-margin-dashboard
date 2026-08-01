@@ -125,6 +125,8 @@ h1{margin:0;font-size:clamp(30px,5.2vw,52px);font-weight:800;letter-spacing:-.02
   font-size:13px;color:var(--muted);backdrop-filter:blur(10px)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);
   animation:pulse 2.2s ease-in-out infinite}
+.badge.stale{border-color:var(--danger);color:var(--danger)}
+.badge.stale .dot{background:var(--danger);box-shadow:0 0 12px var(--danger)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 
 .theme-toggle{position:fixed;top:18px;right:18px;z-index:50;width:44px;height:44px;border-radius:50%;
@@ -494,8 +496,10 @@ function renderChart(){
 
 function render(){ buildBtns(); renderHero(); renderStats(); renderChart(); }
 
-document.getElementById("updBadge").textContent =
-  `資料更新至 ${META.latestPretty}　｜　共 ${fmt(META.days)} 個交易日　｜　每交易日自動更新`;
+if(META.isStale) document.querySelector(".badge").classList.add("stale");
+document.getElementById("updBadge").textContent = META.isStale
+  ? `資料更新至 ${META.latestPretty}　｜　共 ${fmt(META.days)} 個交易日　｜　⚠ 已 ${META.staleDays} 天未更新，自動排程可能已中斷`
+  : `資料更新至 ${META.latestPretty}　｜　共 ${fmt(META.days)} 個交易日　｜　每交易日自動更新`;
 document.getElementById("metaTable").innerHTML =
   `<tr><th>項目</th><th>內容</th></tr>`+
   `<tr><td>展示區間</td><td>${META.startPretty} ～ ${META.latestPretty}（${fmt(META.days)} 個交易日）</td></tr>`+

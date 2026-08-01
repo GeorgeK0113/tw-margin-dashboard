@@ -9,30 +9,11 @@ from datetime import date, timedelta
 
 import db
 from dateutil_tw import daterange, ad_to_compact
-from fetch import TemporarilyUnavailableError
-from pipeline import process_date
+from pipeline import process_with_retry
 
 sys.stdout.reconfigure(encoding="utf-8")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
-
-MAX_ATTEMPTS = 5
-COOLDOWN_SECONDS = 90
-
-
-def process_with_retry(d: date) -> bool:
-    """暫時性失敗（維護時段、流量限制）會等待後重試，不會被當成沒資料。"""
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            return process_date(d)
-        except TemporarilyUnavailableError as e:
-            if attempt == MAX_ATTEMPTS:
-                logger.error("%s 重試 %d 次仍失敗：%s", ad_to_compact(d), MAX_ATTEMPTS, e)
-                raise
-            logger.warning("%s 暫時無法取得（%s），%d 秒後重試 (%d/%d)",
-                           ad_to_compact(d), str(e)[:60], COOLDOWN_SECONDS, attempt, MAX_ATTEMPTS)
-            time.sleep(COOLDOWN_SECONDS)
-    return False
 
 
 def existing_dates() -> set:

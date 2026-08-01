@@ -9,7 +9,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 import db
 from dateutil_tw import daterange
-from pipeline import process_date
+from fetch import TemporarilyUnavailableError
+from pipeline import process_with_retry
 from dashboard import generate_dashboard
 from publish import publish_dashboard
 
@@ -32,15 +33,20 @@ def main():
         logger.info("資料庫已是最新（%s），無需更新", latest)
     else:
         processed = 0
-        for d in daterange(start, end):
-            if process_date(d):
-                processed += 1
+        try:
+            for d in daterange(start, end):
+                if process_with_retry(d):
+                    processed += 1
+        except TemporarilyUnavailableError as e:
+            logger.error("重試多次仍失敗，本次先以已抓到的資料重新發布：%s", e)
         logger.info("本次更新處理了 %d 個交易日", processed)
 
     generate_dashboard()
     logger.info("儀表板已重新產生")
 
-    publish_dashboard(date.today().strftime("%Y%m%d"))
+    latest_after = db.get_latest_date()
+    if latest_after:
+        publish_dashboard(latest_after)
 
 
 if __name__ == "__main__":

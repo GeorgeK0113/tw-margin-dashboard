@@ -1,5 +1,6 @@
 """單一交易日的完整處理流程：抓資料 -> 計算 -> 寫入資料庫。"""
 import logging
+import time
 from datetime import date
 
 import db
@@ -8,6 +9,9 @@ from dateutil_tw import ad_to_compact, ad_to_roc, ad_to_slash
 from fetch import fetch_all, NoTradingDataError, TemporarilyUnavailableError
 
 logger = logging.getLogger(__name__)
+
+MAX_ATTEMPTS = 5
+COOLDOWN_SECONDS = 90
 
 
 def process_date(d: date) -> bool:
@@ -56,3 +60,18 @@ def process_date(d: date) -> bool:
     db.save_metrics(date_str, metrics)
     logger.info("saved %s: %s檔<130%%, TAIEX=%s", date_str, metrics["count_below_130"], metrics["taiex_close"])
     return True
+
+
+def process_with_retry(d: date) -> bool:
+    """暫時性失敗（維護時段、流量限制）會等待後重試，不會被當成沒資料。"""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return process_date(d)
+        except TemporarilyUnavailableError as e:
+            if attempt == MAX_ATTEMPTS:
+                logger.error("%s 重試 %d 次仍失敗：%s", ad_to_compact(d), MAX_ATTEMPTS, e)
+                raise
+            logger.warning("%s 暫時無法取得（%s），%d 秒後重試 (%d/%d)",
+                           ad_to_compact(d), str(e)[:60], COOLDOWN_SECONDS, attempt, MAX_ATTEMPTS)
+            time.sleep(COOLDOWN_SECONDS)
+    return False

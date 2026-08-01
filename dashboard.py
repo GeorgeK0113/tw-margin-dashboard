@@ -1,6 +1,6 @@
 """從資料庫產生互動式 HTML 儀表板。"""
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 import pandas as pd
 
@@ -65,6 +65,8 @@ def generate_dashboard():
         data["low"] = _col(df, "taiex_low", 2)
 
     latest = df.iloc[-1]
+    latest_date = datetime.strptime(str(latest["date"]), "%Y%m%d").date()
+    stale_days = (date.today() - latest_date).days
     meta = {
         "latestPretty": _pretty(str(latest["date"])),
         "startPretty": _pretty(str(df.iloc[0]["date"])),
@@ -72,6 +74,9 @@ def generate_dashboard():
         "totalStocks": int(latest["total_margin_stocks"]),
         "warmupDays": int(warmup_days),
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        # 超過一個週末（3 天）還沒有新資料，代表自動更新排程可能已經中斷
+        "isStale": stale_days > 3,
+        "staleDays": stale_days,
     }
 
     html = (HTML
