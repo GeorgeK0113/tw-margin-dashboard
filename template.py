@@ -422,6 +422,13 @@ function renderStats(){
 }
 
 function renderChart(){
+  const chartEl = document.getElementById("chart");
+  if (typeof Plotly === "undefined") {
+    chartEl.innerHTML = '<div style="padding:80px 20px;text-align:center;color:var(--muted)">'
+      + '圖表元件載入失敗，請檢查網路連線後重新整理頁面</div>';
+    return;
+  }
+  try {
   const i = sliceIdx();
   const x = DATA.dates.slice(i).map(d=>`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`);
   const series = DATA.below[state.th].slice(i);
@@ -492,6 +499,11 @@ function renderChart(){
       title("大盤整體維持率（證交所口徑）　紅線 130% 追繳・黃線 150% 警戒",.252,ct.titleColors[3]),
     ],
   }, {responsive:true, scrollZoom:true, displayModeBar:false});
+  } catch(e) {
+    console.error(e);
+    chartEl.innerHTML = '<div style="padding:80px 20px;text-align:center;color:var(--muted)">'
+      + '圖表繪製失敗，請重新整理頁面</div>';
+  }
 }
 
 function render(){ buildBtns(); renderHero(); renderStats(); renderChart(); }
